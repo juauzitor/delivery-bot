@@ -3,7 +3,9 @@ import random
 import heapq
 import sys
 import argparse
+import csv
 from abc import ABC, abstractmethod
+from datetime import date, datetime
 
 # ==========================
 # CLASSES DE PLAYER
@@ -232,6 +234,7 @@ class Maze:
         self.delay = 100  # milissegundos entre movimentos
         self.path = []
         self.num_deliveries = 0  # contagem de entregas realizadas
+        self.desempenho = [["Passos", "Pontuação", "Cargo", "Bateria", "Entregas"]]
 
     def heuristic(self, a, b):
         # Distância de Manhattan
@@ -324,12 +327,28 @@ class Maze:
                     self.world.goals.remove(target)
                     self.score += 50
                     print("Pacote entregue em", target, "Cargo agora:", self.world.player.cargo)
+            self.desempenho.append([self.steps, self.score, self.world.player.cargo, self.world.player.battery, self.num_deliveries])
             print(f"Passos: {self.steps}, Pontuação: {self.score}, Cargo: {self.world.player.cargo}, Bateria: {self.world.player.battery}, Entregas: {self.num_deliveries}")
 
         print("Fim de jogo!")
+
         print("Pontuação final:", self.score)
         print("Total de passos:", self.steps)
+        self.gerar_csv()
         pygame.quit()
+
+# ==========================
+# GERAR DADOS PARA RELATÓRIO
+# ==========================
+    def gerar_csv(self):
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        nome_arquivo = f"./dist/dados_{timestamp}.csv"
+
+        with open(nome_arquivo, "w", newline="", encoding="utf-8") as arquivo:
+            escritor = csv.writer(arquivo)
+            for row in self.desempenho:
+                escritor.writerow(row)
+
 
 # ==========================
 # PONTO DE ENTRADA PRINCIPAL
@@ -345,7 +364,7 @@ if __name__ == "__main__":
         help="Valor do seed para recriar o mesmo mundo (opcional)."
     )
     args = parser.parse_args()
-    
+
     maze = Maze(seed=args.seed)
     maze.game_loop()
 

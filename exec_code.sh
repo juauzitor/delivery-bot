@@ -1,6 +1,6 @@
-!#/bin/bash
+#!/bin/bash
 
-for item in {1..80}; do
+for item in $(seq 1 $1); do
     uv run main.py
 done
 

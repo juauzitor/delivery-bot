@@ -231,7 +231,7 @@ class Maze:
         self.running = True
         self.score = 0
         self.steps = 0
-        self.delay = 100  # milissegundos entre movimentos
+        self.delay = 1  # milissegundos entre movimentos
         self.path = []
         self.num_deliveries = 0  # contagem de entregas realizadas
         self.desempenho = [["Passos", "Pontuação", "Cargo", "Bateria", "Entregas"]]
@@ -341,9 +341,10 @@ class Maze:
 # GERAR DADOS PARA RELATÓRIO
 # ==========================
     def gerar_csv(self):
+        methods = ['astar', 'dijkstra', 'greedy_best_first_search', 'own']
+        method = methods[random.randrange(len(methods))]
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        nome_arquivo = f"./dist/dados_{timestamp}.csv"
-
+        nome_arquivo = f"./dist/dados_{method}_{timestamp}.csv"
         with open(nome_arquivo, "w", newline="", encoding="utf-8") as arquivo:
             escritor = csv.writer(arquivo)
             for row in self.desempenho:

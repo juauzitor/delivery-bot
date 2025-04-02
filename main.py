@@ -231,7 +231,7 @@ class Maze:
         self.running = True
         self.score = 0
         self.steps = 0
-        self.delay = 1  # milissegundos entre movimentos
+        self.delay = 5  # milissegundos entre movimentos
         self.path = []
         self.num_deliveries = 0  # contagem de entregas realizadas
         self.desempenho = [["Passos", "Pontuação", "Cargo", "Bateria", "Entregas"]]
@@ -277,6 +277,77 @@ class Maze:
                     heapq.heappush(oheap, (fscore[neighbor], neighbor))
         return []
 
+    def dijkstra(self, start, goal):
+        maze = self.world.map
+        size = self.world.maze_size
+        neighbors = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        close_set = set()
+        came_from = {}
+        gscore = {tuple(start): 0}
+        oheap = []
+        heapq.heappush(oheap, (gscore[tuple(start)], tuple(start)))
+        while oheap:
+            current = heapq.heappop(oheap)[1]
+            if list(current) == goal:
+                data = []
+                while current in came_from:
+                    data.append(list(current))
+                    current = came_from[current]
+                data.reverse()
+                return data
+            close_set.add(current)
+            for dx, dy in neighbors:
+                neighbor = (current[0] + dx, current[1] + dy)
+                tentative_g = gscore[current] + 1
+                if 0 <= neighbor[0] < size and 0 <= neighbor[1] < size:
+                    if maze[neighbor[1]][neighbor[0]] == 1:
+                        continue
+                else:
+                    continue
+                if neighbor in close_set and tentative_g >= gscore.get(neighbor, 0):
+                    continue
+                if tentative_g < gscore.get(neighbor, float('inf')):
+                    came_from[neighbor] = current
+                    gscore[neighbor] = tentative_g
+                    heapq.heappush(oheap, (tentative_g, neighbor))
+        return []
+
+    def greedy_best_first_search(self, start, goal):
+        maze = self.world.map
+        size = self.world.maze_size
+        neighbors = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        close_set = set()
+        came_from = {}
+        oheap = []
+        # Prioridade é apenas a heurística (sem custo acumulado)
+        heapq.heappush(oheap, (self.heuristic(start, goal), tuple(start)))
+
+        while oheap:
+            current = heapq.heappop(oheap)[1]
+            if list(current) == goal:
+                # Reconstrói o caminho
+                path = []
+                while current in came_from:
+                    path.append(list(current))
+                    current = came_from[current]
+                path.reverse()
+                return path
+            close_set.add(current)
+            for dx, dy in neighbors:
+                neighbor = (current[0] + dx, current[1] + dy)
+                # Verifica se está dentro dos limites e não é obstáculo
+                if 0 <= neighbor[0] < size and 0 <= neighbor[1] < size:
+                    if maze[neighbor[1]][neighbor[0]] == 1:
+                        continue
+                else:
+                    continue
+                if neighbor not in close_set and neighbor not in [n[1] for n in oheap]:
+                    # Calcula prioridade apenas com heurística
+                    priority = self.heuristic(neighbor, goal)
+                    heapq.heappush(oheap, (priority, neighbor))
+                    came_from[neighbor] = current
+        return []
+
     def game_loop(self):
         # O jogo termina quando o número de entregas realizadas é igual ao total de itens.
         while self.running:
@@ -290,7 +361,7 @@ class Maze:
                 self.running = False
                 break
 
-            self.path = self.astar(self.world.player.position, target)
+            self.path = self.greedy_best_first_search(self.world.player.position, target)
             if not self.path:
                 print("Nenhum caminho encontrado para o alvo", target)
                 self.running = False
@@ -334,15 +405,13 @@ class Maze:
 
         print("Pontuação final:", self.score)
         print("Total de passos:", self.steps)
-        self.gerar_csv()
+        self.gerar_csv("greedy_best_first_search")
         pygame.quit()
 
 # ==========================
 # GERAR DADOS PARA RELATÓRIO
 # ==========================
-    def gerar_csv(self):
-        methods = ['astar', 'dijkstra', 'greedy_best_first_search', 'own']
-        method = methods[random.randrange(len(methods))]
+    def gerar_csv(self, method):
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         nome_arquivo = f"./dist/dados_{method}_{timestamp}.csv"
         with open(nome_arquivo, "w", newline="", encoding="utf-8") as arquivo:

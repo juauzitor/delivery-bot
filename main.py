@@ -37,6 +37,9 @@ class DefaultPlayer(BasePlayer):
     def escolher_alvo(self, world):
         sx, sy = self.position
         # Se não estiver carregando pacote e houver pacotes disponíveis:
+        #if self.battery < 25 and world.recharger:
+        #    return world.recharger
+
         if self.cargo == 0 and world.packages:
             best = None
             best_dist = float('inf')
@@ -226,12 +229,13 @@ class World:
 # CLASSE MAZE: Lógica do jogo e planejamento de caminhos (A*)
 # ==========================
 class Maze:
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, method="astar"):
         self.world = World(seed)
+        self.search_method = method
         self.running = True
         self.score = 0
         self.steps = 0
-        self.delay = 5  # milissegundos entre movimentos
+        self.delay = 3  # milissegundos entre movimentos
         self.path = []
         self.num_deliveries = 0  # contagem de entregas realizadas
         self.desempenho = [["Passos", "Pontuação", "Cargo", "Bateria", "Entregas"]]
@@ -361,7 +365,7 @@ class Maze:
                 self.running = False
                 break
 
-            self.path = self.greedy_best_first_search(self.world.player.position, target)
+            self.path = self.selecionar_metodo(target)
             if not self.path:
                 print("Nenhum caminho encontrado para o alvo", target)
                 self.running = False
@@ -405,7 +409,7 @@ class Maze:
 
         print("Pontuação final:", self.score)
         print("Total de passos:", self.steps)
-        self.gerar_csv("greedy_best_first_search")
+        self.gerar_csv(self.search_method)
         pygame.quit()
 
 # ==========================
@@ -419,6 +423,13 @@ class Maze:
             for row in self.desempenho:
                 escritor.writerow(row)
 
+    def selecionar_metodo(self, target):
+        if self.search_method == "astar":
+            return self.astar(self.world.player.position, target)
+        elif self.search_method == "dijkstra":
+            return self.dijkstra(self.world.player.position, target)
+        elif self.search_method == "greedy_best_first_search":
+            return self.greedy_best_first_search(self.world.player.position, target)
 
 # ==========================
 # PONTO DE ENTRADA PRINCIPAL
@@ -433,8 +444,15 @@ if __name__ == "__main__":
         default=None,
         help="Valor do seed para recriar o mesmo mundo (opcional)."
     )
+    parser.add_argument(
+        "--method",
+        type=str,
+        default='default',  # Valor padrão para o método
+        help="Método de navegação do bot (A*, Dijkstra, etc.)."
+    )
+
     args = parser.parse_args()
 
-    maze = Maze(seed=args.seed)
+    maze = Maze(seed=args.seed, method=args.method)
     maze.game_loop()
 

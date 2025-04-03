@@ -37,8 +37,8 @@ class DefaultPlayer(BasePlayer):
     def escolher_alvo(self, world):
         sx, sy = self.position
         # Se não estiver carregando pacote e houver pacotes disponíveis:
-        #if self.battery < 25 and world.recharger:
-        #    return world.recharger
+        if self.battery < 25 and world.recharger:
+            return world.recharger
 
         if self.cargo == 0 and world.packages:
             best = None
@@ -235,7 +235,7 @@ class Maze:
         self.running = True
         self.score = 0
         self.steps = 0
-        self.delay = 3  # milissegundos entre movimentos
+        self.delay = 1  # milissegundos entre movimentos
         self.path = []
         self.num_deliveries = 0  # contagem de entregas realizadas
         self.desempenho = [["Passos", "Pontuação", "Cargo", "Bateria", "Entregas"]]
